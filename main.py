@@ -189,7 +189,7 @@ def random_action():
     return random.choice(list(Actions))
 
 
-def run_Xk_random(value):
+def run_xk_random(value):
     robot = Robot(0, 0)
     make_board_and_place_robot(robot)
     times = 0
@@ -216,8 +216,7 @@ def run_Xk_random(value):
 
 
 def time1k():
-    run_Xk_random(200000)
-
+    run_xk_random(200000)
 
 
 time1k()
