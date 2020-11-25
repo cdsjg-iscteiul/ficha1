@@ -189,6 +189,29 @@ def random_action():
     return random.choice(list(Actions))
 
 
+def evaluation(state_initial, before_value):
+    # V(s) = ( 1 - alpha) * V(s) + alpha * ( Reward(s) + discount * V(s')
+    learning_rate = 0.8
+    discount_rate = 0.6
+
+    if before_value is None:
+        old_value = 0
+    else:
+        old_value = before_value
+
+    valor_reward_inicial = reward(state_initial)
+
+    next_action = random_action()
+    next_state = master_movement(state_initial, next_action)
+    next_value = evaluation(next_state, old_value)
+
+    print("fwpfojwofp")
+    value = (1 - learning_rate) * old_value + learning_rate * (valor_reward_inicial + discount_rate * next_value)
+
+    print("OL'A")
+    return value
+
+
 def run_xk_random(value):
     robot = Robot(0, 0)
     make_board_and_place_robot(robot)
@@ -215,8 +238,14 @@ def run_xk_random(value):
     print("MEDIA DE TEMPO:   " + str(time_average))
 
 
-def time1k():
-    run_xk_random(200000)
+def run_x_evaluation(value):
+    robot = Robot(0, 0)
+    make_board_and_place_robot(robot)
 
 
-time1k()
+def test():
+    teste = evaluation(1, None)
+    print(teste)
+
+
+test()
