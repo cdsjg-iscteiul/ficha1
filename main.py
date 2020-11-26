@@ -1,7 +1,9 @@
+import seaborn as sn
 import random
 from enum import Enum
 import time
 import numpy as np
+import matplotlib.pyplot as plt
 
 
 class Actions(Enum):
@@ -51,6 +53,12 @@ class Robot:
     @current_y.setter
     def current_y(self, value):
         self._current_y = value
+
+
+class Save_state:
+    def __init__(self, number, state):
+        self.number = number
+        self.state = state
 
 
 def make_board_and_place_robot(robot):
@@ -194,22 +202,13 @@ def evaluation(state_initial, before_value):
     learning_rate = 0.8
     discount_rate = 0.6
 
-    if before_value is None:
-        old_value = 0
-    else:
-        old_value = before_value
-
     valor_reward_inicial = reward(state_initial)
 
-    next_action = random_action()
-    next_state = master_movement(state_initial, next_action)
-    next_value = evaluation(next_state, old_value)
+    value = (1 - learning_rate) * before_value + learning_rate * (valor_reward_inicial + discount_rate * 100)
 
-    print("fwpfojwofp")
-    value = (1 - learning_rate) * old_value + learning_rate * (valor_reward_inicial + discount_rate * next_value)
+    valor = Save_state(value, int(state_initial))
 
-    print("OL'A")
-    return value
+    return valor
 
 
 def run_xk_random(value):
@@ -241,11 +240,39 @@ def run_xk_random(value):
 def run_x_evaluation(value):
     robot = Robot(0, 0)
     make_board_and_place_robot(robot)
+    evaluation_all = []
+    times = 0
+    old_value = 0
+
+    for x in range(30):
+        total_reward = 0
+        mid_time = 0
+        for t in range(value):
+            start_time = time.process_time()
+            action = random_action()
+            if robot.state == 1:
+                old_value = evaluation(robot.state, 0)
+                evaluation_all.append(old_value)
+            else:
+                old_value = evaluation(robot.state, old_value)
+                evaluation_all.append(old_value)
+            robot.state = master_movement(robot.state, action)
+            robot.reward = reward(robot.state)
+            if robot.reward == 100:
+                robot.state = 1
+            total_reward += robot.reward
+            end_time = time.process_time()
+            process_time = (end_time - start_time)
+            mid_time += process_time
+        times += mid_time
+        average_reward = total_reward / value
+        print("REWARD: " + str(x + 1) + "  VALOR MÉDIO REWARD:  " + str(average_reward) + "   TEMPO:  " + str(mid_time))
+    time_average = (times / value)
+    print("MEDIA DE TEMPO:   " + str(time_average))
+    print(evaluation_all[0])
+
+def transform_and_heatmap(list_evaluation):
+    print(list_evaluation[0])
 
 
-def test():
-    teste = evaluation(1, None)
-    print(teste)
-
-
-test()
+run_x_evaluation(1000)
