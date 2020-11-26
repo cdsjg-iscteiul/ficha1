@@ -1,4 +1,3 @@
-import seaborn as sn
 import random
 from enum import Enum
 import time
@@ -55,7 +54,7 @@ class Robot:
         self._current_y = value
 
 
-class Save_state:
+class SaveState:
     def __init__(self, number, state):
         self.number = number
         self.state = state
@@ -206,7 +205,7 @@ def evaluation(state_initial, before_value):
 
     value = (1 - learning_rate) * before_value + learning_rate * (valor_reward_inicial + discount_rate * 100)
 
-    valor = Save_state(value, int(state_initial))
+    valor = SaveState(value, int(state_initial))
 
     return valor
 
@@ -250,12 +249,14 @@ def run_x_evaluation(value):
         for t in range(value):
             start_time = time.process_time()
             action = random_action()
+
             if robot.state == 1:
                 old_value = evaluation(robot.state, 0)
                 evaluation_all.append(old_value)
             else:
-                old_value = evaluation(robot.state, old_value)
+                old_value = evaluation(robot.state, old_value.number)
                 evaluation_all.append(old_value)
+
             robot.state = master_movement(robot.state, action)
             robot.reward = reward(robot.state)
             if robot.reward == 100:
@@ -269,7 +270,8 @@ def run_x_evaluation(value):
         print("REWARD: " + str(x + 1) + "  VALOR MÉDIO REWARD:  " + str(average_reward) + "   TEMPO:  " + str(mid_time))
     time_average = (times / value)
     print("MEDIA DE TEMPO:   " + str(time_average))
-    print(evaluation_all[0])
+    print(str(evaluation_all[0].number))
+
 
 def transform_and_heatmap(list_evaluation):
     print(list_evaluation[0])
