@@ -55,9 +55,11 @@ class Robot:
 
 
 class SaveState:
-    def __init__(self, number, state):
+    state = None
+
+    def __init__(self, number, states):
         self.number = number
-        self.state = state
+        self.state = states
 
 
 def make_board_and_place_robot(robot):
@@ -238,7 +240,7 @@ def run_xk_random(value):
 
 def run_x_evaluation(value):
     robot = Robot(0, 0)
-    make_board_and_place_robot(robot)
+    board = make_board_and_place_robot(robot)
     evaluation_all = []
     times = 0
     old_value = 0
@@ -270,11 +272,31 @@ def run_x_evaluation(value):
         print("REWARD: " + str(x + 1) + "  VALOR MÉDIO REWARD:  " + str(average_reward) + "   TEMPO:  " + str(mid_time))
     time_average = (times / value)
     print("MEDIA DE TEMPO:   " + str(time_average))
-    print(str(evaluation_all[0].number))
+    transform_and_heatmap(evaluation_all, board)
 
 
-def transform_and_heatmap(list_evaluation):
-    print(list_evaluation[0])
+def transform_and_heatmap(list_evaluation, board):
+    data = np.zeros((10, 10), dtype=int)
+    sorted_list = sorted(list_evaluation, key=lambda x: x.state)
 
+    remove_duplicates(sorted_list)
+
+
+def remove_duplicates(list_11):
+    last_list = []
+    x = 0
+    while x < len(list_11):
+        list_mid = []
+        if x + 1 == len(list_11):
+            return last_list
+        else:
+            if list_11[x].state == list_11[x + 1].state:
+                list_mid.append(list_11[x])
+                list_mid.append(list_11[x+1])
+                add = random.choice(list_mid)
+                last_list.append(add)
+
+        x += 1
+    return last_list
 
 run_x_evaluation(1000)
