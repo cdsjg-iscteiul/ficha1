@@ -2,7 +2,10 @@ import random
 from enum import Enum
 import time
 import numpy as np
+import seaborn as sea
 import matplotlib.pyplot as plt
+import pandas as pd
+import aux_file
 
 
 class Actions(Enum):
@@ -56,15 +59,20 @@ class Robot:
 
 class SaveState:
     state = None
+    number = None
 
-    def __init__(self, number, states):
-        self.number = number
+    def __init__(self, numbers, states):
+        self.number = numbers
         self.state = states
 
+    def __hash__(self):
+        return hash(self.state)
+
+    def __eq__(self, other):
+        return self.state == other.state
 
 def make_board_and_place_robot(robot):
     board = np.arange(1, 101, dtype=int)
-
     board_made = board.reshape(10, 10)
 
     robot_initial_state = board_made[robot.initial_x][robot.initial_y]
@@ -72,120 +80,28 @@ def make_board_and_place_robot(robot):
 
     return board_made
 
-
-def movement_free(state, action):
-    switcher = {
-        Actions.UP: state - 10,
-        Actions.DOWN: state + 10,
-        Actions.RIGHT: state - 1,
-        Actions.LEFT: state + 1
-    }
-    return switcher.get(action, "Invalid")
-
-
-def movement_with_up(state, action):
-    switcher = {
-        Actions.UP: state,
-        Actions.DOWN: state + 10,
-        Actions.RIGHT: state - 1,
-        Actions.LEFT: state + 1
-    }
-    return switcher.get(action, "Invalid")
-
-
-def movement_with_left(state, action):
-    switcher = {
-        Actions.UP: state - 10,
-        Actions.DOWN: state + 10,
-        Actions.RIGHT: state - 1,
-        Actions.LEFT: state
-    }
-    return switcher.get(action, "Invalid")
-
-
-def movement_with_down(state, action):
-    switcher = {
-        Actions.UP: state - 10,
-        Actions.DOWN: state,
-        Actions.RIGHT: state - 1,
-        Actions.LEFT: state + 1
-    }
-    return switcher.get(action, "Invalid")
-
-
-def movement_with_right(state, action):
-    switcher = {
-        Actions.UP: state - 10,
-        Actions.DOWN: state + 10,
-        Actions.RIGHT: state,
-        Actions.LEFT: state + 1
-    }
-    return switcher.get(action, "Invalid")
-
-
-def movement_corner_top_right(state, action):
-    switcher = {
-        Actions.UP: state,
-        Actions.DOWN: state + 10,
-        Actions.RIGHT: state,
-        Actions.LEFT: state + 1
-    }
-    return switcher.get(action, "Invalid")
-
-
-def movement_corner_top_left(state, action):
-    switcher = {
-        Actions.UP: state,
-        Actions.DOWN: state + 10,
-        Actions.RIGHT: state - 1,
-        Actions.LEFT: state
-    }
-    return switcher.get(action, "Invalid")
-
-
-def movement_corner_bot_right(state, action):
-    switcher = {
-        Actions.UP: state - 10,
-        Actions.DOWN: state,
-        Actions.RIGHT: state,
-        Actions.LEFT: state + 1
-    }
-    return switcher.get(action, "Invalid")
-
-
-def movement_corner_bot_left(state, action):
-    switcher = {
-        Actions.UP: state - 10,
-        Actions.DOWN: state,
-        Actions.RIGHT: state,
-        Actions.LEFT: state
-    }
-    return switcher.get(action, "Invalid")
-
-
 def master_movement(state, action):
     split = str(state)
     listas = [int(d) for d in str(split)]
 
     if state == 1:
-        return movement_corner_top_right(state, action)
+        return aux_file.movement_corner_top_right(state, action)
     elif state == 10:
-        return movement_corner_top_left(state, action)
+        return aux_file.movement_corner_top_left(state, action)
     elif state == 100:
-        return movement_corner_bot_left(state, action)
+        return aux_file.movement_corner_bot_left(state, action)
     elif state == 91:
-        return movement_corner_bot_right(state, action)
+        return aux_file.movement_corner_bot_right(state, action)
     elif len(listas) == 1:
-        return movement_with_up(state, action)
+        return aux_file.movement_with_up(state, action)
     elif listas[1] == 1:
-        return movement_with_right(state, action)
+        return aux_file.movement_with_right(state, action)
     elif listas[0] == 9:
-        return movement_with_down(state, action)
+        return aux_file.movement_with_down(state, action)
     elif listas[1] == 0:
-        return movement_with_left(state, action)
+        return aux_file.movement_with_left(state, action)
     else:
-        return movement_free(state, action)
-
+        return aux_file.movement_free(state, action)
 
 def reward(state):
     if state == 100:
@@ -193,19 +109,22 @@ def reward(state):
     else:
         return 0
 
-
 def random_action():
     return random.choice(list(Actions))
 
-
-def evaluation(state_initial, before_value):
+def evaluation(estado_velho):
     # V(s) = ( 1 - alpha) * V(s) + alpha * ( Reward(s) + discount * V(s')
-    learning_rate = 0.8
-    discount_rate = 0.6
+    learning_rate = 0.01
+    discount_rate = 0.99
 
-    valor_reward_inicial = reward(state_initial)
+    valor_reward_inicial = reward(estado_velho.state)
+    action = aux_file.check_possible_actions(estado_velho.state)
 
-    value = (1 - learning_rate) * before_value + learning_rate * (valor_reward_inicial + discount_rate * 100)
+    value = (1 - learning_rate) * estado_velho.number + learning_rate *
+            (valor_reward_inicial + discount_rate * evaluation())
+
+
+    print(value)
 
     valor = SaveState(value, int(state_initial))
 
@@ -250,17 +169,21 @@ def run_x_evaluation(value):
         mid_time = 0
         for t in range(value):
             start_time = time.process_time()
-            action = random_action()
+            old_state = robot.state
 
-            if robot.state == 1:
-                old_value = evaluation(robot.state, 0)
+            if old_state == 1:
+                old_value = evaluation(SaveState(0, 1))
                 evaluation_all.append(old_value)
             else:
-                old_value = evaluation(robot.state, old_value.number)
+                old_value = evaluation(evaluation_all.pop(), old_value)
                 evaluation_all.append(old_value)
 
+            action = random_action()
             robot.state = master_movement(robot.state, action)
             robot.reward = reward(robot.state)
+
+
+
             if robot.reward == 100:
                 robot.state = 1
             total_reward += robot.reward
@@ -272,31 +195,29 @@ def run_x_evaluation(value):
         print("REWARD: " + str(x + 1) + "  VALOR MÉDIO REWARD:  " + str(average_reward) + "   TEMPO:  " + str(mid_time))
     time_average = (times / value)
     print("MEDIA DE TEMPO:   " + str(time_average))
-    transform_and_heatmap(evaluation_all, board)
+    transform_and_heatmap(evaluation_all)
 
 
-def transform_and_heatmap(list_evaluation, board):
-    data = np.zeros((10, 10), dtype=int)
+def transform_and_heatmap(list_evaluation):
     sorted_list = sorted(list_evaluation, key=lambda x: x.state)
 
-    remove_duplicates(sorted_list)
+    lista123 = remove_duplicates(sorted_list)
+
+    last_list = []
+    for x in lista123:
+        last_list.append(x.number)
+
+    sea.heatmap(np.reshape(last_list, (10, 10)), annot=True)
+    plt.show()
 
 
 def remove_duplicates(list_11):
     last_list = []
-    x = 0
-    while x < len(list_11):
-        list_mid = []
-        if x + 1 == len(list_11):
-            return last_list
-        else:
-            if list_11[x].state == list_11[x + 1].state:
-                list_mid.append(list_11[x])
-                list_mid.append(list_11[x+1])
-                add = random.choice(list_mid)
-                last_list.append(add)
+    for x in list_11:
+        if x not in last_list:
+            last_list.append(x)
 
-        x += 1
+    last_list.append(SaveState(0, 100))
     return last_list
 
-run_x_evaluation(1000)
+def
