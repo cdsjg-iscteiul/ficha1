@@ -1,5 +1,21 @@
-from main import Actions
+import random
+from enum import Enum
+from main import q_vector
 
+
+class Actions(Enum):
+    UP = 1
+    DOWN = 2
+    LEFT = 3
+    RIGHT = 4
+
+def random_action():
+    return random.choice(list(Actions))
+
+def add_list(list):
+    final_list = q_vector()
+    for x in list:
+        if list[x].number
 
 def movement_free(state, action):
     switcher = {

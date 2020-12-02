@@ -1,18 +1,9 @@
 import random
-from enum import Enum
 import time
 import numpy as np
 import seaborn as sea
 import matplotlib.pyplot as plt
-import pandas as pd
 import aux_file
-
-
-class Actions(Enum):
-    UP = 1
-    DOWN = 2
-    LEFT = 3
-    RIGHT = 4
 
 
 class Robot:
@@ -71,14 +62,16 @@ class SaveState:
     def __eq__(self, other):
         return self.state == other.state
 
+
 def make_board_and_place_robot(robot):
-    board = np.arange(1, 101, dtype=int)
+    board = np.arange(1, 101, dtype=SaveState)
     board_made = board.reshape(10, 10)
 
     robot_initial_state = board_made[robot.initial_x][robot.initial_y]
     robot.state = robot_initial_state
 
     return board_made
+
 
 def master_movement(state, action):
     split = str(state)
@@ -103,30 +96,28 @@ def master_movement(state, action):
     else:
         return aux_file.movement_free(state, action)
 
+
 def reward(state):
     if state == 100:
         return 100
     else:
         return 0
 
-def random_action():
-    return random.choice(list(Actions))
 
-def evaluation(estado_velho):
+
+def evaluation(estado_velho, estado_novo):
     # V(s) = ( 1 - alpha) * V(s) + alpha * ( Reward(s) + discount * V(s')
     learning_rate = 0.01
     discount_rate = 0.99
 
-    valor_reward_inicial = reward(estado_velho.state)
-    action = aux_file.check_possible_actions(estado_velho.state)
+    valor_reward_inicial = reward(estado_velho.number)
 
-    value = (1 - learning_rate) * estado_velho.number + learning_rate *
-            (valor_reward_inicial + discount_rate * evaluation())
-
+    value = (1 - learning_rate) * estado_velho.number + learning_rate * (
+            valor_reward_inicial + discount_rate * estado_novo.number)
 
     print(value)
 
-    valor = SaveState(value, int(state_initial))
+    valor = SaveState(value, estado_velho.number)
 
     return valor
 
@@ -141,7 +132,7 @@ def run_xk_random(value):
         mid_time = 0
         for t in range(value):
             start_time = time.process_time()
-            action = random_action()
+            action = aux_file.random_action()
             robot.state = master_movement(robot.state, action)
             robot.reward = reward(robot.state)
             if robot.reward == 100:
@@ -157,45 +148,28 @@ def run_xk_random(value):
     print("MEDIA DE TEMPO:   " + str(time_average))
 
 
-def run_x_evaluation(value):
+def run_x_evaluation_20000(value):
     robot = Robot(0, 0)
-    board = make_board_and_place_robot(robot)
-    evaluation_all = []
-    times = 0
-    old_value = 0
 
     for x in range(30):
         total_reward = 0
-        mid_time = 0
+        total_time = 0
+        v_final = q_vector()
         for t in range(value):
-            start_time = time.process_time()
+            v = []
+            moviment = aux_file.random_action()
             old_state = robot.state
-
-            if old_state == 1:
-                old_value = evaluation(SaveState(0, 1))
-                evaluation_all.append(old_value)
-            else:
-                old_value = evaluation(evaluation_all.pop(), old_value)
-                evaluation_all.append(old_value)
-
-            action = random_action()
-            robot.state = master_movement(robot.state, action)
+            mid = v_final.__getitem__(robot.state - 1)
+            avaliation_1 = evaluation(v_final.__getitem__(robot.state), mid)
+            v.append(avaliation_1)
+            robot.state = master_movement(old_state, moviment)
             robot.reward = reward(robot.state)
-
-
-
+            avaliation_2 = evaluation(v_final.__getitem__(robot.state), mid)
+            v.append(avaliation_2)
+            v_final.append(remove_duplicates(v))
             if robot.reward == 100:
                 robot.state = 1
             total_reward += robot.reward
-            end_time = time.process_time()
-            process_time = (end_time - start_time)
-            mid_time += process_time
-        times += mid_time
-        average_reward = total_reward / value
-        print("REWARD: " + str(x + 1) + "  VALOR MÉDIO REWARD:  " + str(average_reward) + "   TEMPO:  " + str(mid_time))
-    time_average = (times / value)
-    print("MEDIA DE TEMPO:   " + str(time_average))
-    transform_and_heatmap(evaluation_all)
 
 
 def transform_and_heatmap(list_evaluation):
@@ -220,4 +194,35 @@ def remove_duplicates(list_11):
     last_list.append(SaveState(0, 100))
     return last_list
 
-def
+
+def q_table():
+    columns = []
+    grid = []
+    # creates the matrix
+    for x in range(1, 10):
+        for y in range(1, 10):
+            for t in range(1, 100):
+                columns.append(SaveState(0, t))
+            grid.append(columns.copy())
+            columns = []
+
+
+def q_vector():
+    vector = []
+    for t in range(1, 100):
+        vector.append(SaveState(0, t))
+    return vector
+
+
+def test():
+    robot = Robot(9, 0)
+    make_board_and_place_robot(robot)
+
+    v_final = q_vector()
+
+    mid = v_final.__getitem__(robot.state - 1)
+
+    print(mid.state)
+
+
+run_x_evaluation_20000(20000)
