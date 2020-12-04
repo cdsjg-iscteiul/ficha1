@@ -104,20 +104,33 @@ def reward(state):
         return 0
 
 
-
 def evaluation(estado_velho, estado_novo):
     # V(s) = ( 1 - alpha) * V(s) + alpha * ( Reward(s) + discount * V(s')
-    learning_rate = 0.01
+    learning_rate = 0.99
     discount_rate = 0.99
 
-    valor_reward_inicial = reward(estado_velho.number)
+    valor_reward_inicial = reward(estado_velho.state)
 
-    value = (1 - learning_rate) * estado_velho.number + learning_rate * (
-            valor_reward_inicial + discount_rate * estado_novo.number)
+    if estado_velho.state == 100 and estado_novo.state == 1:
+        value_final = 0
+        print("ENTREI teste")
+    else:
+        value_pt1 = (1 - learning_rate)
+        print("PART1:    " + str(value_pt1))
+        value_pt2 = (discount_rate * estado_novo.number)
+        print("PART2:    " + str(value_pt2))
+        value_pt3 = (valor_reward_inicial + value_pt2)
+        print("PART3:    " + str(value_pt3))
+        value_pt4 = value_pt1 * estado_velho.number
+        print("PART4:    " + str(value_pt4))
+        value_pt5 = learning_rate * value_pt3
+        print("PART5:    " + str(value_pt5))
+        value_final = value_pt4 + value_pt5
+        print("PART6:    " + str(value_final))
 
-    print(value)
+    valor = SaveState(value_final, estado_velho.state)
 
-    valor = SaveState(value, estado_velho.number)
+    print(valor.number)
 
     return valor
 
@@ -149,31 +162,41 @@ def run_xk_random(value):
 
 
 def run_x_evaluation_20000(value):
-    robot = Robot(0, 0)
-
-    for x in range(30):
+    v_final = q_vector()
+    v = q_vector()
+    for x in range(2):
+        robot = Robot(0, 0)
+        make_board_and_place_robot(robot)
         total_reward = 0
-        total_time = 0
-        v_final = q_vector()
         for t in range(value):
-            v = []
             moviment = aux_file.random_action()
             old_state = robot.state
-            mid = v_final.__getitem__(robot.state - 1)
-            avaliation_1 = evaluation(v_final.__getitem__(robot.state), mid)
-            v.append(avaliation_1)
             robot.state = master_movement(old_state, moviment)
+            # print(moviment)
+            # print("NEW STATE:  " + str(robot.state))
             robot.reward = reward(robot.state)
-            avaliation_2 = evaluation(v_final.__getitem__(robot.state), mid)
+            if robot.state == 100:
+                avaliation_2 = evaluation(next((x for x in v_final if x.state == old_state), None),
+                                          next((x for x in v_final if x.state == 1), None))
+            else:
+                # avaliation_2 = evaluation(next((x for x in v_final if x.state == old_state), None),
+                                     # next((x for x in v_final if x.state == robot.state), None))
+
+                avaliation_2 = evaluation(SaveState(100,100), SaveState(0,1))
             v.append(avaliation_2)
-            v_final.append(remove_duplicates(v))
+
             if robot.reward == 100:
                 robot.state = 1
+
             total_reward += robot.reward
+        v_final = remove_duplicates(v)
+        print("TESTE     " + str(v[90].number))
+    v_new = remove_duplicates(v_final)
+    transform_and_heatmap(v_final)
 
 
 def transform_and_heatmap(list_evaluation):
-    sorted_list = sorted(list_evaluation, key=lambda x: x.state)
+    sorted_list = sorted(list_evaluation, key=lambda shadow: shadow.state)
 
     lista123 = remove_duplicates(sorted_list)
 
@@ -191,7 +214,6 @@ def remove_duplicates(list_11):
         if x not in last_list:
             last_list.append(x)
 
-    last_list.append(SaveState(0, 100))
     return last_list
 
 
@@ -201,7 +223,7 @@ def q_table():
     # creates the matrix
     for x in range(1, 10):
         for y in range(1, 10):
-            for t in range(1, 100):
+            for t in range(1, 101):
                 columns.append(SaveState(0, t))
             grid.append(columns.copy())
             columns = []
@@ -209,20 +231,9 @@ def q_table():
 
 def q_vector():
     vector = []
-    for t in range(1, 100):
-        vector.append(SaveState(0, t))
+    for t in range(1, 101):
+        vector.append(SaveState(0.12, t))
     return vector
-
-
-def test():
-    robot = Robot(9, 0)
-    make_board_and_place_robot(robot)
-
-    v_final = q_vector()
-
-    mid = v_final.__getitem__(robot.state - 1)
-
-    print(mid.state)
 
 
 run_x_evaluation_20000(20000)
