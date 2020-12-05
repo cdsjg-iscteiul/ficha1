@@ -1,4 +1,3 @@
-import random
 import time
 import numpy as np
 import seaborn as sea
@@ -113,24 +112,24 @@ def evaluation(estado_velho, estado_novo):
 
     if estado_velho.state == 100 and estado_novo.state == 1:
         value_final = 0
-        print("ENTREI teste")
+        # print("ENTREI teste")
     else:
         value_pt1 = (1 - learning_rate)
-        print("PART1:    " + str(value_pt1))
+        # print("PART1:    " + str(value_pt1))
         value_pt2 = (discount_rate * estado_novo.number)
-        print("PART2:    " + str(value_pt2))
+        # print("PART2:    " + str(value_pt2))
         value_pt3 = (valor_reward_inicial + value_pt2)
-        print("PART3:    " + str(value_pt3))
+        # print("PART3:    " + str(value_pt3))
         value_pt4 = value_pt1 * estado_velho.number
-        print("PART4:    " + str(value_pt4))
+        # print("PART4:    " + str(value_pt4))
         value_pt5 = learning_rate * value_pt3
-        print("PART5:    " + str(value_pt5))
+        # print("PART5:    " + str(value_pt5))
         value_final = value_pt4 + value_pt5
-        print("PART6:    " + str(value_final))
+        # print("PART6:    " + str(value_final))
 
     valor = SaveState(value_final, estado_velho.state)
 
-    print(valor.number)
+    # print(valor.number)
 
     return valor
 
@@ -167,7 +166,6 @@ def run_x_evaluation_20000(value):
     for x in range(2):
         robot = Robot(0, 0)
         make_board_and_place_robot(robot)
-        total_reward = 0
         for t in range(value):
             moviment = aux_file.random_action()
             old_state = robot.state
@@ -179,30 +177,31 @@ def run_x_evaluation_20000(value):
                 avaliation_2 = evaluation(next((x for x in v_final if x.state == old_state), None),
                                           next((x for x in v_final if x.state == 1), None))
             else:
-                # avaliation_2 = evaluation(next((x for x in v_final if x.state == old_state), None),
-                                     # next((x for x in v_final if x.state == robot.state), None))
+                avaliation_2 = evaluation(next((x for x in v_final if x.state == old_state), None),
+                                          next((x for x in v_final if x.state == robot.state), None))
 
-                avaliation_2 = evaluation(SaveState(100,100), SaveState(0,1))
+            # avaliation_2 = evaluation(SaveState(100, 100), SaveState(100, 1))
             v.append(avaliation_2)
 
             if robot.reward == 100:
                 robot.state = 1
-
-            total_reward += robot.reward
+        print("ANTES DO REMOVE DUPLICATES:" + str(len(v_final)))
         v_final = remove_duplicates(v)
-        print("TESTE     " + str(v[90].number))
-    v_new = remove_duplicates(v_final)
+        print("DEPOIS DO REMOVE DUPLICATES:" + str(len(v_final)))
+        v.clear()
+        # print("TESTE     " + str(v[3].number))
     transform_and_heatmap(v_final)
 
 
 def transform_and_heatmap(list_evaluation):
     sorted_list = sorted(list_evaluation, key=lambda shadow: shadow.state)
 
-    lista123 = remove_duplicates(sorted_list)
+    # lista123 = remove_duplicates(sorted_list)
 
     last_list = []
-    for x in lista123:
+    for x in sorted_list:
         last_list.append(x.number)
+        print(x.state)
 
     sea.heatmap(np.reshape(last_list, (10, 10)), annot=True)
     plt.show()
