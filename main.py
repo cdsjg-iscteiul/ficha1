@@ -1,8 +1,11 @@
 import time
 import numpy as np
-import matplotlib.pyplot as plt
 import seaborn as sea
+import matplotlib.pyplot as plt
+import matplotlib.pylab as hmp
 import aux_file
+
+legend = 1
 
 
 class Robot:
@@ -136,27 +139,28 @@ def evaluation(estado_velho, estado_novo):
 
 def one_run(steps, robot):
     total_reward = 0
+    nxt_state = robot.state
 
     for i in range(steps):
-        action = aux_file.random_action()
-        robot.state = master_movement(robot.state, action)
+        nxt_state = master_movement(nxt_state, aux_file.random_action())
         robot.reward = reward(robot.state)
-        if robot.state == 100:
-            robot.state = 1
         total_reward += robot.reward
+        if nxt_state == 100:
+            nxt_state = 1
 
     average_reward = total_reward / steps
 
     return average_reward
 
+
 def new_rand():
     robot = Robot(0, 0)
     make_board_and_place_robot(robot)
-    times = 0
     times_deviation = []
     average_list_1_20k = []
 
-    times_pos = [0]*100
+    next_state = robot.state
+    times_pos = [0] * 100
     times_pos[0] = robot.state
     for i in range(30):
         start_time = time.time()
@@ -166,13 +170,18 @@ def new_rand():
                 avg_1 = one_run(1000, robot)
                 average_list_1_20k.append(avg_1)
 
+            times_pos[next_state-1] += 1
 
+            next_state = master_movement(next_state, aux_file.random_action())
+            robot.reward = reward(next_state)
 
-            if x == 20000:
+            if x == (20000 - 1):
                 avg_20k = one_run(1000, robot)
                 average_list_1_20k.append(avg_20k)
 
-
+        times_deviation.append(time.time() - start_time)
+    print(times_pos)
+    draw_heatmap(times_pos)
 
 
 def run_xk_random(value):
@@ -240,6 +249,14 @@ def run_x_evaluation_20000(value):
         # print("TESTE     " + str(v[3].number))
 
 
+def draw_heatmap(vector):
+    global legend
+    tx = sea.heatmap(np.reshape(vector, (10, 10)), linewidth=0.5)
+    tx.set_title('Figure ' + str(legend))
+    legend += 1
+    hmp.show()
+
+
 def transform_and_heatmap(list_evaluation):
     sorted_list = sorted(list_evaluation, key=lambda shadow: shadow.state)
 
@@ -250,7 +267,7 @@ def transform_and_heatmap(list_evaluation):
         last_list.append(x.number)
         print(x.state)
 
-    sea.heatmap(np.reshape(last_list, (10, 10)), annot=True)
+    sea.heatmap(np.reshape(last_list, (10, 10)))
     plt.show()
 
 
@@ -282,4 +299,4 @@ def q_vector():
     return vector
 
 
-run_xk_random(20000)
+new_rand()
